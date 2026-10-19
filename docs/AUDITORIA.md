@@ -5,11 +5,15 @@
 - FFmpeg 6.1.1 já instalado (libx264, libopus, libvpx etc.) — motor de cortes pronto para uso.
 - Python 3.13 + pip, com saída de rede liberada para PyPI. `faster-whisper` 1.2.1 instala e
   importa sem problema.
-- **huggingface.co está bloqueado pela política de rede do ambiente** (`403` no proxy). O peso
-  do modelo Whisper vem de lá — sem liberar esse domínio, a transcrição real não roda em nenhuma
-  sessão de nuvem configurada assim. Correção: no menu do ambiente (barra de título da sessão) →
-  Edit → Network access → adicionar `huggingface.co` em Allowed domains, ou usar um nível mais
-  amplo de acesso.
+- **Rede corrigida com a ajuda do usuário.** O download do modelo Whisper não usa só
+  `huggingface.co` — redireciona para CDNs variadas (`cas-server.xethub.hf.co`,
+  `us.aws.cdn.hf.co` e outras). Liberar só o domínio principal não bastou; foi preciso ampliar o
+  nível de acesso à rede do ambiente para "qualquer domínio" (Network access → nível amplo, não
+  allowlist). Registrado aqui para quem for replicar: **não dá para resolver isso com uma lista
+  de domínios individuais**, porque os hosts de CDN mudam.
+- Também foi preciso fixar `av<14` (PyAV) — a versão 19.0.1 instalada por padrão quebra a
+  chamada interna do `faster-whisper` para decodificar áudio (`metadata_errors` kwarg removido
+  da API do PyAV novo). Já adicionado em `requirements-cloud.txt`.
 - `espeak-ng` instalado via apt (usado só para gerar áudio sintético de teste, não faz parte do
   produto final).
 
@@ -60,8 +64,14 @@ sintético real (vozes geradas com espeak-ng + silêncios reais inseridos com ff
 - Um marcador de recomeço ("então, eh, deixa eu recomeçar") é detectado e o trecho inteiro é
   removido.
 - O conteúdo real (as duas frases "boas") é preservado integralmente.
-- `tests/test_e2e_cloud.py` cobre o mesmo cenário com transcrição real (`faster-whisper`) em vez
-  de dados sintéticos — **bloqueado até `huggingface.co` ser liberado na política de rede**.
+- `tests/test_e2e_cloud.py` cobre o mesmo cenário com transcrição real (`faster-whisper small`,
+  modelo baixado de verdade, não mockado) — **testado e passando**: original intacto, duração
+  caiu de 28,59s para 16,10s, retomada e marcador de recomeço removidos, conteúdo real preservado,
+  1 trecho corretamente sinalizado como duvidoso para revisão humana. A segmentação de fala que o
+  Whisper real produziu em cima da voz sintética (espeak-ng) ficou mais grosseira do que a do
+  teste com dados sintéticos (3 segmentos em vez de 5) — esperado, já que espeak-ng não soa como
+  voz humana real; isso não invalida o teste, mas significa que a precisão fina de corte por
+  palavra só será confirmada de verdade com gravações humanas reais (Fase 3, no Mac).
 
 ## Dados enviados à Anthropic (Seção 6 do pedido)
 Nenhum vídeo ou áudio bruto é enviado ao modelo Claude para a análise semântica — apenas texto
