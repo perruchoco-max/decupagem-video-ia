@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+out_test/
+out_test_core/
+*.wav
+*.mp4
+*.mov
+*.mp3
+*.m4a
+samples/
+raw_take.wav
