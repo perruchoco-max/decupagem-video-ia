@@ -9,3 +9,6 @@ out_test_core/
 *.m4a
 samples/
 raw_take.wav
+local/whisper.cpp/
+out_test_local/
+raw_take_16k.wav

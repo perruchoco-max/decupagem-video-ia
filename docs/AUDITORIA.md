@@ -28,11 +28,18 @@
   resultados para download ali mesmo. Decisão confirmada com o usuário: esse é o fluxo adotado
   para "Modo Nuvem", sem contratar hospedagem externa.
 
-## Modo Local (Mac M1) — não testável a partir desta sessão
-Esta sessão roda num container Linux isolado, sem qualquer acesso ao disco do Mac. Não há como
-"selecionar uma pasta no Finder" nem validar `whisper.cpp` compilado para Metal a partir daqui.
-Decisão confirmada com o usuário: ele já usa o Claude Code localmente no Mac; a validação real do
-Modo Local acontece lá, com os arquivos dele, rodando este mesmo repositório.
+## Modo Local (Mac M1) — núcleo validado aqui, Metal e seleção de pasta só no Mac
+Esta sessão roda num container Linux isolado, sem qualquer acesso ao disco do Mac — não há como
+"selecionar uma pasta no Finder" nem testar a aceleração Metal a partir daqui. Mas o
+`whisper.cpp` é código-fonte único (muda só o backend de aceleração entre plataformas), então
+compilei e rodei o binário real aqui (CPU) para validar a integração antes de mandar instruções
+ao Mac. Isso revelou um bug real na suposição inicial: o JSON do whisper.cpp não tem uma chave
+`"words"` — tem `"tokens"`, e só aparece com a flag `-dtw <preset>` (alinhamento por DTW); sem
+ela não há timestamp por palavra, só por segmento. Corrigido em `core/transcribe.py` e
+confirmado com `tests/test_local_logic.py` (pipeline completo: transcrição real → decisão →
+corte com FFmpeg → relatórios, arquivo original intacto). Decisão confirmada com o usuário: ele
+já usa o Claude Code localmente no Mac; a validação da aceleração Metal e da seleção de pasta via
+Finder acontece lá — ver `docs/INSTALACAO_MAC.md`.
 
 ## Diferenças macOS ARM64 × Linux x86_64 que o código precisa respeitar
 | Item | macOS M1 (local) | Linux x86_64 (nuvem) |

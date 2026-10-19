@@ -58,13 +58,24 @@ class CloudFasterWhisperBackend(TranscriptionBackend):
 
 
 class LocalWhisperCppBackend(TranscriptionBackend):
-    """macOS/local. Chama o binário whisper.cpp (whisper-cli) compilado com suporte
-    a Metal no M1, modelo multilíngue Small em GGUF. Não roda neste container Linux --
-    código correto, não testado aqui (precisa do Mac)."""
+    """macOS/local. Chama o binário whisper.cpp (whisper-cli), modelo multilíngue Small em
+    GGUF. A interface de linha de comando foi compilada e testada de verdade nesta sessão
+    (build CPU em Linux, mesmo código-fonte do Mac -- só muda a aceleração: Metal lá, CPU aqui),
+    o que confirmou o formato real do JSON e corrigiu a suposição original de uma chave "words"
+    que não existe -- o nome real é "tokens", só presente com a flag -dtw (alinhamento por
+    DTW); sem ela o whisper.cpp não devolve timestamp por palavra, só por segmento."""
 
-    def __init__(self, binary_path: str = "whisper-cli", model_path: str = "models/ggml-small.bin"):
+    # presets de alinhamento DTW do whisper.cpp -- precisam bater com o tamanho do modelo
+    _DTW_PRESETS = {"tiny", "tiny.en", "base", "base.en", "small", "small.en",
+                    "medium", "medium.en", "large.v1", "large.v2", "large.v3"}
+
+    def __init__(self, binary_path: str = "whisper-cli", model_path: str = "models/ggml-small.bin",
+                 dtw_preset: str = "small"):
         self.binary_path = binary_path
         self.model_path = model_path
+        self.dtw_preset = dtw_preset
+        if dtw_preset not in self._DTW_PRESETS:
+            raise ValueError(f"dtw_preset '{dtw_preset}' inválido -- use um de {sorted(self._DTW_PRESETS)}")
 
     def transcribe(self, audio_path: str, language: str = "pt") -> list[Segment]:
         if not shutil.which(self.binary_path):
@@ -72,17 +83,25 @@ class LocalWhisperCppBackend(TranscriptionBackend):
                 f"'{self.binary_path}' não encontrado no PATH. Modo local requer whisper.cpp "
                 "compilado no Mac (veja docs/INSTALACAO_MAC.md)."
             )
+        out_base = "/tmp/whispercpp_out"
         cmd = [
-            self.binary_path, "-m", self.model_path, "-f", audio_path,
-            "-l", language, "-oj", "-ml", "1", "--output-file", "/tmp/whispercpp_out",
+            self.binary_path, "-m", self.model_path, "-f", audio_path, "-l", language,
+            "-oj", "-ojf", "-dtw", self.dtw_preset, "-of", out_base,
         ]
         subprocess.run(cmd, check=True, capture_output=True)
         import json
-        with open("/tmp/whispercpp_out.json", encoding="utf-8") as fh:
+        with open(f"{out_base}.json", encoding="utf-8") as fh:
             data = json.load(fh)
         out = []
         for seg in data.get("transcription", []):
-            words = [Word(w["text"].strip(), w["offsets"]["from"] / 1000, w["offsets"]["to"] / 1000)
-                     for w in seg.get("words", [])] if "words" in seg else []
+            if not seg["text"].strip():
+                continue
+            words = []
+            for tok in seg.get("tokens", []):
+                text = tok["text"].strip()
+                if not text or (text.startswith("[") and text.endswith("]")):
+                    continue  # tokens especiais, ex: [_BEG_]
+                words.append(Word(text, tok["offsets"]["from"] / 1000, tok["offsets"]["to"] / 1000,
+                                   tok.get("p", 1.0)))
             out.append(Segment(seg["text"].strip(), seg["offsets"]["from"] / 1000, seg["offsets"]["to"] / 1000, words))
         return out
