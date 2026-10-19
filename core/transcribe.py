@@ -1,9 +1,11 @@
 """Abstração de backend de transcrição. Mesma interface para whisper.cpp (local/Mac)
 e faster-whisper (nuvem/Linux) -- o núcleo de decupagem não sabe qual dos dois rodou."""
 from __future__ import annotations
+import re
 import subprocess
 import shutil
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -65,17 +67,43 @@ class LocalWhisperCppBackend(TranscriptionBackend):
     que não existe -- o nome real é "tokens", só presente com a flag -dtw (alinhamento por
     DTW); sem ela o whisper.cpp não devolve timestamp por palavra, só por segmento."""
 
-    # presets de alinhamento DTW do whisper.cpp -- precisam bater com o tamanho do modelo
+    # presets de alinhamento DTW do whisper.cpp -- precisam bater com o tamanho do modelo.
+    # Testado de verdade: um preset que não bate com o modelo não dá erro -- só produz
+    # timestamps de palavra incorretos, o que silenciosamente faz a detecção de silêncio
+    # errar o ponto de corte. Por isso infere automaticamente do nome do arquivo do modelo
+    # em vez de confiar em um valor passado à mão.
     _DTW_PRESETS = {"tiny", "tiny.en", "base", "base.en", "small", "small.en",
                     "medium", "medium.en", "large.v1", "large.v2", "large.v3"}
 
     def __init__(self, binary_path: str = "whisper-cli", model_path: str = "models/ggml-small.bin",
-                 dtw_preset: str = "small"):
+                 dtw_preset: str | None = None):
         self.binary_path = binary_path
         self.model_path = model_path
-        self.dtw_preset = dtw_preset
+        inferred = self._infer_preset(model_path)
+        if dtw_preset is None:
+            if inferred is None:
+                raise ValueError(
+                    f"Não consegui inferir o preset de alinhamento DTW a partir do nome do "
+                    f"modelo '{model_path}'. Passe dtw_preset explicitamente (um de "
+                    f"{sorted(self._DTW_PRESETS)})."
+                )
+            dtw_preset = inferred
+        elif inferred is not None and dtw_preset != inferred:
+            raise ValueError(
+                f"dtw_preset='{dtw_preset}' não bate com o modelo '{model_path}' (nome sugere "
+                f"'{inferred}'). Use dtw_preset='{inferred}' ou troque o modelo."
+            )
         if dtw_preset not in self._DTW_PRESETS:
             raise ValueError(f"dtw_preset '{dtw_preset}' inválido -- use um de {sorted(self._DTW_PRESETS)}")
+        self.dtw_preset = dtw_preset
+
+    @staticmethod
+    def _infer_preset(model_path: str) -> str | None:
+        m = re.match(r"ggml-(.+)$", Path(model_path).stem)
+        if not m:
+            return None
+        size = m.group(1)
+        return size if size in LocalWhisperCppBackend._DTW_PRESETS else None
 
     def transcribe(self, audio_path: str, language: str = "pt") -> list[Segment]:
         if not shutil.which(self.binary_path):
@@ -83,9 +111,17 @@ class LocalWhisperCppBackend(TranscriptionBackend):
                 f"'{self.binary_path}' não encontrado no PATH. Modo local requer whisper.cpp "
                 "compilado no Mac (veja docs/INSTALACAO_MAC.md)."
             )
+        # o whisper-cli (decodificador miniaudio embutido) só lê áudio bruto (wav/mp3/flac/ogg),
+        # não contêineres de vídeo como mp4/mov -- achado real testando com um vídeo de
+        # verdade no Mac. Extrai sempre para wav 16kHz mono antes de chamar o binário.
+        wav_path = "/tmp/whispercpp_in.wav"
+        subprocess.run(
+            ["ffmpeg", "-y", "-v", "error", "-i", audio_path, "-ar", "16000", "-ac", "1", wav_path],
+            check=True, capture_output=True,
+        )
         out_base = "/tmp/whispercpp_out"
         cmd = [
-            self.binary_path, "-m", self.model_path, "-f", audio_path, "-l", language,
+            self.binary_path, "-m", self.model_path, "-f", wav_path, "-l", language,
             "-oj", "-ojf", "-dtw", self.dtw_preset, "-of", out_base,
         ]
         subprocess.run(cmd, check=True, capture_output=True)

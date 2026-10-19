@@ -71,6 +71,40 @@ sintético real (vozes geradas com espeak-ng + silêncios reais inseridos com ff
 - Um marcador de recomeço ("então, eh, deixa eu recomeçar") é detectado e o trecho inteiro é
   removido.
 - O conteúdo real (as duas frases "boas") é preservado integralmente.
+## Bug real encontrado testando com vídeo de verdade no Mac (corrigido)
+O usuário testou com um vídeo real (`C9147.MP4`) e reportou: nenhum silêncio foi cortado, nem o
+momento em que ele claramente erra e recomeça a fala. Investigando, eram **dois bugs reais**,
+não um:
+
+1. **MP4 não decodifica.** O `whisper-cli` (decodificador miniaudio embutido) só lê áudio bruto
+   (wav/mp3/flac/ogg), não contêineres de vídeo. Corrigido: `LocalWhisperCppBackend` agora sempre
+   extrai o áudio para WAV 16kHz mono via FFmpeg antes de chamar o binário.
+2. **A causa raiz de verdade: nenhum silêncio era cortado mesmo com áudio puro.** A arquitetura
+   original só removia o espaço *entre* os segmentos que o próprio Whisper decidia criar — e o
+   Whisper (local ou nuvem) frequentemente agrupa várias frases com pausas reais entre elas num
+   único segmento de texto longo, sem nunca o dividir. Como o corte só olhava as bordas dos
+   segmentos do modelo, essas pausas internas nunca eram removidas. Corrigido com uma mudança de
+   arquitetura: `core/vad.py` (novo) detecta silêncio de verdade no áudio via `ffmpeg
+   silencedetect`; `core/decoupage.py` agora desmonta os segmentos em palavras e remonta "falas"
+   nos pontos onde esse silêncio acústico real confirma uma pausa — não nos limites que o modelo
+   de linguagem escolheu. Teste de regressão dedicado em
+   `tests/test_silencio_intra_segmento.py`, que reproduz exatamente esse cenário (duas frases
+   com 1.5s de silêncio real, entregues pelo backend como um único segmento) e confirma o corte.
+   Isso também ajuda o caso de "erro e recomeço", porque a fala de recomeço deixa de ficar presa
+   ao mesmo bloco de texto da tentativa anterior.
+3. **Achado colateral ao validar a correção:** o alinhamento por palavra do whisper.cpp (`-dtw`)
+   não dá erro quando o preset não bate com o tamanho do modelo — só produz timestamps errados
+   silenciosamente, o que fez o corte piorar sem aviso num teste (reduziu só 3.86s com o modelo
+   `tiny` usando preset errado, contra 13.16s com `small` + preset `small` correto, bem próximo do
+   resultado da nuvem). Corrigido: `LocalWhisperCppBackend` agora infere o preset do nome do
+   arquivo do modelo e recusa (com erro claro) uma combinação incompatível passada manualmente.
+
+**Limite conhecido, ainda não resolvido:** a detecção de "recomeço" é por palavra-chave
+(`RESTART_MARKERS` em `core/decoupage.py`). No vídeo real do usuário, a frase de recomeço usada
+não batia com nenhum marcador da lista — a lógica não tem como adivinhar uma frase nova sem ser
+informada dela. Pendente: o usuário informar a frase exata que usou para adicionarmos à lista
+(ou avaliar uma detecção mais genérica de autocorreção, se o padrão se repetir em vários vídeos).
+
 - `tests/test_e2e_cloud.py` cobre o mesmo cenário com transcrição real (`faster-whisper small`,
   modelo baixado de verdade, não mockado) — **testado e passando**: original intacto, duração
   caiu de 28,59s para 16,10s, retomada e marcador de recomeço removidos, conteúdo real preservado,

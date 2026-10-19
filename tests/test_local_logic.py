@@ -29,7 +29,7 @@ def main():
     assert SRC.exists(), f"arquivo de teste não encontrado: {SRC}"
     original_hash = file_hash(SRC)
 
-    backend = LocalWhisperCppBackend(binary_path=binary, model_path=model, dtw_preset="tiny")
+    backend = LocalWhisperCppBackend(binary_path=binary, model_path=model)
     result = run_conservative(str(SRC), str(OUT), backend, language="pt")
 
     print("=== RESULTADO (whisper.cpp real) ===")

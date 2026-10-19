@@ -6,16 +6,19 @@ from .transcribe import TranscriptionBackend
 from .decoupage import build_conservative_edl, to_render_edl
 from .cutter import render_edl, probe_duration, has_video_stream
 from .report import write_outputs, write_srt
+from .vad import detect_silences
 
 
 def run_conservative(src_path: str, out_dir: str, backend: TranscriptionBackend,
-                      language: str = "pt") -> dict:
+                      language: str = "pt", min_gap_s: float = 0.25,
+                      noise_db: float = -35.0) -> dict:
     src = Path(src_path)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
 
     segments = backend.transcribe(str(src), language=language)
-    result = build_conservative_edl(segments)
+    silences = detect_silences(str(src), noise_db=noise_db, min_silence_s=min_gap_s)
+    result = build_conservative_edl(segments, silences, min_gap_s=min_gap_s)
     edl = to_render_edl(result)
 
     has_video = has_video_stream(str(src))
