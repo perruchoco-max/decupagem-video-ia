@@ -99,11 +99,22 @@ não um:
    resultado da nuvem). Corrigido: `LocalWhisperCppBackend` agora infere o preset do nome do
    arquivo do modelo e recusa (com erro claro) uma combinação incompatível passada manualmente.
 
-**Limite conhecido, ainda não resolvido:** a detecção de "recomeço" é por palavra-chave
-(`RESTART_MARKERS` em `core/decoupage.py`). No vídeo real do usuário, a frase de recomeço usada
-não batia com nenhum marcador da lista — a lógica não tem como adivinhar uma frase nova sem ser
-informada dela. Pendente: o usuário informar a frase exata que usou para adicionarmos à lista
-(ou avaliar uma detecção mais genérica de autocorreção, se o padrão se repetir em vários vídeos).
+**Resolvido com a transcrição real que o usuário enviou.** Não era um "recomeço" por
+palavra-chave -- eram dois casos diferentes:
+
+1. **Claquete de início de gravação** ("Um, valendo."). Adicionado `TAKE_START_MARKERS` em
+   `core/decoupage.py`: corta a primeira fala da gravação se for curta (≤4 palavras) e contiver
+   um marcador como "valendo", "gravando", "rodando", "ação". Só se aplica à primeira fala, para
+   não arriscar cortar conteúdo real que mencione essas palavras no meio do vídeo.
+2. **Autocorreção no meio da frase** ("...discos que se... berrr... eu separei alguns discos
+   que podem..."). Sem palavra-chave fixa -- detectado por uma mesma sequência de 3+ palavras se
+   repetir dentro de uma janela de ~20 palavras (`_find_self_correction`). Quando acha, mantém
+   só a partir da repetição, descartando o trecho abandonado e o preenchimento ("berrr") junto.
+   Marcado como "duvidosa" para revisão humana, como as outras decisões de julgamento.
+
+Ambos testados com a transcrição exata que o usuário mandou
+(`tests/test_autocorrecao_e_claquete.py`): a claquete e a autocorreção saem do texto final, o
+conteúdo real (nome do disco, recomendação) é preservado.
 
 - `tests/test_e2e_cloud.py` cobre o mesmo cenário com transcrição real (`faster-whisper small`,
   modelo baixado de verdade, não mockado) — **testado e passando**: original intacto, duração

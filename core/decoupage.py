@@ -23,12 +23,26 @@ RESTART_MARKERS = [
     "vamos de novo", "deixa eu tentar de novo",
 ]
 
+# Claquete/marcador de início de gravação (ex: "ação!", clack de claquete falada). Só é
+# cortado se for a PRIMEIRA fala da gravação e for curta -- evita falso positivo em
+# conteúdo real que mencione essas palavras no meio do vídeo.
+TAKE_START_MARKERS = ["valendo", "gravando", "rodando", "ação", "acao", "claquete"]
+TAKE_START_MAX_WORDS = 4
+
 DUPLICATE_SIMILARITY_THRESHOLD = 0.82
+
+# Autocorreção no meio da fala: o falante abandona uma frase e repete o início dela em
+# seguida (ex: "...discos que se... berrr... eu separei alguns discos que podem..."). Não
+# tem palavra-chave fixa -- é detectado por uma mesma sequência de palavras aparecer duas
+# vezes perto uma da outra. Achado real testando com vídeo do usuário (ver AUDITORIA.md).
+SELF_CORRECTION_MIN_WORDS = 3
+SELF_CORRECTION_LOOKAHEAD_WORDS = 20
 
 
 @dataclass
 class CutDecision:
-    kind: str  # "manter" | "cortar_silencio" | "cortar_repeticao" | "cortar_restart"
+    kind: str  # "manter" | "cortar_repeticao" | "cortar_restart" | "cortar_autocorrecao"
+    # | "cortar_marcador_gravacao"
     start: float
     end: float
     text: str = ""
@@ -50,8 +64,33 @@ def _is_restart_marker(text: str) -> bool:
     return any(marker in t for marker in RESTART_MARKERS)
 
 
+def _is_take_start_marker(text: str) -> bool:
+    words = text.strip().split()
+    if len(words) > TAKE_START_MAX_WORDS:
+        return False
+    t = text.lower().strip(" .,!?")
+    return any(marker in t for marker in TAKE_START_MARKERS)
+
+
 def _similar(a: str, b: str) -> float:
     return difflib.SequenceMatcher(None, a.lower().strip(), b.lower().strip()).ratio()
+
+
+def _find_self_correction(words: list[Word]) -> tuple[int, int] | None:
+    """Acha uma frase abandonada e repetida em seguida dentro da mesma fala. Devolve
+    (início do trecho abandonado, início da repetição) em índices de `words`, ou None."""
+    texts = [w.text.lower().strip(".,!?") for w in words]
+    n = len(texts)
+    k = SELF_CORRECTION_MIN_WORDS
+    for i in range(n - k):
+        phrase = texts[i:i + k]
+        if not all(phrase):
+            continue
+        window_end = min(n - k, i + k + SELF_CORRECTION_LOOKAHEAD_WORDS) + 1
+        for j in range(i + k, window_end):
+            if texts[j:j + k] == phrase:
+                return i, j
+    return None
 
 
 def _flatten_words(segments: list[Segment]) -> list[Word]:
@@ -128,11 +167,33 @@ def build_conservative_edl(
             i += 1
             continue
 
+        if i == 0 and _is_take_start_marker(seg.text):
+            decisions.append(CutDecision("cortar_marcador_gravacao", seg.start, seg.end, seg.text,
+                                          "alta", "claquete/marcador de início de gravação"))
+            i += 1
+            continue
+
         if _is_restart_marker(seg.text):
             decisions.append(CutDecision("cortar_restart", seg.start, seg.end, seg.text,
                                           "alta", "marcador de recomeço detectado no texto"))
             i += 1
             continue
+
+        correction = _find_self_correction(seg.words)
+        if correction is not None:
+            ci, cj = correction
+            abandoned = seg.words[ci:cj]
+            kept_words = seg.words[:ci] + seg.words[cj:]
+            decisions.append(CutDecision(
+                "cortar_autocorrecao", abandoned[0].start, abandoned[-1].end,
+                " ".join(w.text for w in abandoned), "duvidosa",
+                "trecho abandonado e repetido em seguida (autocorreção) -- confirme que a "
+                "parte mantida faz sentido sozinha",
+            ))
+            seg = Segment(" ".join(w.text for w in kept_words),
+                           kept_words[0].start if kept_words else seg.start,
+                           kept_words[-1].end if kept_words else seg.end,
+                           kept_words)
 
         if kept and _similar(seg.text, kept[-1].text) >= DUPLICATE_SIMILARITY_THRESHOLD:
             prev = kept.pop()
