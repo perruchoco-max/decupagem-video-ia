@@ -33,7 +33,7 @@ if [ "${SKIP_WHISPER:-0}" = 1 ]; then echo "  pulado (SKIP_WHISPER=1)"
 else
   if ! "$VENV/bin/python" -c "import faster_whisper" >/dev/null 2>&1; then
     mkdir -p "$(dirname "$VENV")"
-    python3 -m venv "$VENV" && "$VENV/bin/python" -m pip install --quiet --disable-pip-version-check --only-binary=:all: --upgrade pip faster-whisper onnxruntime \
+    python3 -m venv "$VENV" && "$VENV/bin/python" -m pip install --quiet --disable-pip-version-check --only-binary=:all: --upgrade pip faster-whisper onnxruntime "av<17" \
       || aviso "faster-whisper não instalou"
     "$VENV/bin/python" -m pip install --quiet --disable-pip-version-check --only-binary=:all: mediapipe opencv-python \
       || aviso "mediapipe não instalou; a /vsl usa legenda fixa"
