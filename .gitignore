@@ -1,14 +1,16 @@
+node_modules/
 __pycache__/
 *.pyc
-out_test/
-out_test_core/
-*.wav
+.DS_Store
+# Vídeos e saídas de render (pesados; não vão para o Git)
+meus-videos/*
+!meus-videos/.gitkeep
+video-projects/
+renders/
 *.mp4
 *.mov
-*.mp3
 *.m4a
-samples/
-raw_take.wav
-local/whisper.cpp/
-out_test_local/
-raw_take_16k.wav
+*.wav
+# Segredos e dados pessoais do criador
+perfil.json
+.higgsfield*

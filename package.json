@@ -1,0 +1,14 @@
+{
+  "name": "edite-reels-oney",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kit de edição de Reels no estilo do Oney (skills do Claude Code + HyperFrames).",
+  "scripts": {
+    "setup": "bash scripts/setup-cloud.sh",
+    "teste": "bash scripts/teste-instalacao.sh"
+  },
+  "dependencies": {
+    "gsap": "^3.12.5",
+    "hyperframes": "^0.9.67"
+  }
+}

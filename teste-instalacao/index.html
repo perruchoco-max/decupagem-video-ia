@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<!-- Teste da instalacao: 5 s, vertical. O instalador copia o gsap.min.js do kit para esta pasta antes de renderizar. -->
+<script src="gsap.min.js"></script>
+<style>
+  html, body { margin: 0; background: #0d0a14; }
+  #teste { position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #3a1f6b 0%, #0d0a14 70%); }
+  .t { position: absolute; left: 0; width: 1080px; text-align: center; font-family: Arial, Helvetica, sans-serif; color: #fff; }
+  #k { top: 760px; font-size: 44px; letter-spacing: 6px; color: #c8ff4d; font-weight: 700; }
+  #h { top: 830px; font-size: 120px; line-height: 1.05; font-weight: 800; }
+  #s { top: 1120px; font-size: 40px; color: #cfc6e6; }
+</style>
+</head>
+<body>
+<div id="teste" data-composition-id="teste" data-start="0" data-duration="5" data-width="1080" data-height="1920" style="width:1080px;height:1920px">
+  <div id="k" class="t clip" data-start="0" data-duration="5" data-track-index="1">TESTE DA INSTALACAO</div>
+  <div id="h" class="t clip" data-start="0" data-duration="5" data-track-index="2">Meu primeiro<br>video</div>
+  <div id="s" class="t clip" data-start="0" data-duration="5" data-track-index="3">Se este video tocou, esta tudo pronto.</div>
+</div>
+<script>
+  const tl = gsap.timeline({ paused: true });
+  tl.from("#k", { y: 40, opacity: 0, duration: 0.6, ease: "power3.out" }, 0.2)
+    .from("#h", { y: 80, opacity: 0, duration: 0.8, ease: "power3.out" }, 0.4)
+    .from("#s", { opacity: 0, duration: 0.6 }, 1.2)
+    .to("#h", { scale: 1.06, duration: 3.2, ease: "none" }, 1.2)
+    .to({}, { duration: 0.01 }, 4.99);
+  window.__timelines = window.__timelines || {};
+  window.__timelines["teste"] = tl;
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/setup-cloud.sh\" >> \"$HOME/edite-reels-instalacao.log\" 2>&1 &",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}
