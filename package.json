@@ -5,7 +5,9 @@
   "description": "Kit de edição de Reels no estilo do Oney (skills do Claude Code + HyperFrames).",
   "scripts": {
     "setup": "bash scripts/setup-cloud.sh",
-    "teste": "bash scripts/teste-instalacao.sh"
+    "teste": "bash scripts/teste-instalacao.sh",
+    "setup:voz": "bash scripts/setup-voz.sh",
+    "setup:parakeet": "bash scripts/setup-parakeet.sh"
   },
   "dependencies": {
     "gsap": "^3.12.5",

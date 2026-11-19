@@ -1,0 +1,6 @@
+# Dicionário pessoal (como o do Wispr Flow): um nome ou termo por linha. Linhas com # são ignoradas.
+# A transcrição passa a priorizar essas grafias (marcas, @, nomes, termos técnicos).
+# Exemplos (apague e coloque os seus):
+Claude Code
+Instagram
+Reels

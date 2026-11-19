@@ -17,12 +17,25 @@ gravado em Reel, anúncio ou VSL no estilo do Oney. Ele substitui o antigo pipel
 Na primeira vez o Claude pergunta seu nome, @, nicho e onde ficam seus prints, e salva em `perfil.json`
 (esse arquivo não vai para o Git).
 
+## Ferramentas abertas no lugar das pagas
+
+| Paga | Aqui | Como usar | Estado |
+|---|---|---|---|
+| ElevenLabs (voz) | Motor OmniVoice, o mesmo que o VoiceStudio usa em CPU | `/voz` · `bash scripts/setup-voz.sh` | Testado em português. Lento em CPU (veja os limites em `.claude/skills/voz/SKILL.md`). |
+| Wispr Flow (dicionário pessoal) | `dicionario.txt` na raiz: nomes, marcas e termos que a transcrição deve acertar | automático nas skills de reel | Testado: "Cloud Code" passou a sair "Claude Code". |
+| Wispr Flow (motor local) | Parakeet TDT v3, o motor do OpenWhispr | `bash scripts/setup-parakeet.sh` e `--engine parakeet` | Experimental: mais rápido, mas perdeu uma palavra no teste. O padrão continua Whisper. |
+| Higgsfield (troca de roupa e cenário na `/vsl`) | Sem equivalente aberto que rode aqui. O OpenJutsu exige GPU NVIDIA. | mantido como está | A Higgsfield continua opcional e paga. |
+
+O OpenWhispr em si é um app de ditado para o desktop (digitar falando em qualquer programa). Ele não roda numa sessão em nuvem; se quiser, instale no seu computador em github.com/OpenWhispr/openwhispr.
+
 ## Estrutura
 - `.claude/skills/` — as 6 skills (versão Mac do pacote) e `_perfil-oney.md`.
 - `scripts/setup-cloud.sh` — instala dependências, confere navegador e FFmpeg, instala o Whisper e gera o vídeo de teste.
   Roda sozinho no início de cada sessão (hook em `.claude/settings.json`) e pode ser rodado à mão com `npm run setup`.
 - `scripts/teste-instalacao.sh` — renderiza `meus-videos/teste-instalacao.mp4` (5 s) para confirmar que tudo funciona (`npm run teste`).
 - `teste-instalacao/` — composição do vídeo de teste.
+- `.claude/skills/voz/`, `scripts/falar.sh`, `scripts/setup-voz.sh` — narração, clonagem e dublagem locais.
+- `scripts/setup-parakeet.sh` — motor Parakeet opcional. `dicionario.txt` — seu dicionário pessoal.
 - `meus-videos/` — coloque aqui os vídeos gravados. `video-projects/<nome>/renders/` recebe o vídeo final.
 
 ## Usar no app do Claude Code (celular ou navegador)
