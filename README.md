@@ -28,6 +28,21 @@ Na primeira vez o Claude pergunta seu nome, @, nicho e onde ficam seus prints, e
 
 O OpenWhispr em si é um app de ditado para o desktop (digitar falando em qualquer programa). Ele não roda numa sessão em nuvem; se quiser, instale no seu computador em github.com/OpenWhispr/openwhispr.
 
+## Skills de motion design (instaladas com `npx skills add`, versões em `skills-lock.json`)
+
+| Skill | Fonte | Para quê |
+|---|---|---|
+| `find-skills` | vercel-labs/skills | Buscar e instalar outras skills (`npx skills find <assunto>`). |
+| `hyperframes`, `hyperframes-cli` | heygen-com/hyperframes (open source) | Regras de render e comandos do HyperFrames. |
+| `hyperframes-registry` | heygen-com/hyperframes | Catálogo de 448 blocos e componentes prontos (transições, títulos, overlays, gráficos). Ex.: `npx hyperframes add light-leak`. |
+| `gsap-core`, `gsap-timeline`, `gsap-plugins`, `gsap-performance` | greensock/gsap-skills (oficial) | GSAP: tweens, timelines, SplitText, Flip, etc. |
+| `motion-design` | lottiefiles/motion-design-skill | Princípios de timing, easing e coreografia. |
+
+Testado aqui: o catálogo lista, o bloco `light-leak` instala, passa no lint e renderiza em MP4.
+Não instaladas de propósito: `media-use` e `reverse-any-video` (dependem da HeyGen), `figma` (app externo).
+A telemetria do HyperFrames está desligada em `.claude/settings.json` (`HYPERFRAMES_NO_TELEMETRY=1`). As skills do HyperFrames mandam o agente enviar um sinal de uso; não envie.
+A skill `motion-design` tem uma página opcional que aponta para um serviço com login da LottieFiles (`reference/export-and-render.md`); ignore-a.
+
 ## Estrutura
 - `.claude/skills/` — as 6 skills (versão Mac do pacote) e `_perfil-oney.md`.
 - `scripts/setup-cloud.sh` — instala dependências, confere navegador e FFmpeg, instala o Whisper e gera o vídeo de teste.
