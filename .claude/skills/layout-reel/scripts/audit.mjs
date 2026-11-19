@@ -93,46 +93,42 @@ for (const t of TIMES) {
   if (chip) { ok(Math.abs(cx(chip) - AX) <= 3, `${tag} dado centralizado no eixo`, `centro ${cx(chip).toFixed(1)}`); ok(chip.x0 >= SAFE.x0 && chip.x1 <= SAFE.x1, `${tag} dado na zona segura`, `${chip.x0}–${chip.x1}`); }
 }
 
-// rodapé (fixo): separadores no eixo, centralizados no conteúdo, ritmo interno
+// rodapé (fixo): dois grupos — marcas principais (par sem separador) e créditos (um separador no eixo)
 await seek(18);
 const marks = [await ink("[id^=ft] img", 0), await ink("[id^=ft] img", 1)];                     // Boechat, 6º Leilão
-const labs = [await dom("[id^=ft] .flab", 0), await dom("[id^=ft] .flab", 1), await dom("[id^=ft] .flab", 2)];
+const labs = [await dom("[id^=ft] .flab", 0), await dom("[id^=ft] .flab", 1)];
 const logos2 = [await ink("[id^=ft] img", 2), await ink("[id^=ft] img", 3), await ink("[id^=ft] img", 4)];
-const jireh = await ink("[id^=ft] img", 5);
 const divs = await page.evaluate(() => [...document.querySelectorAll("[id^=ft] div")].filter((d) => d.style.width === "2px").map((d) => { const r = d.getBoundingClientRect(); return { x0: r.left, x1: r.right, y0: r.top, y1: r.bottom }; }));
-const rowMarks = { y0: Math.min(...marks.map((m) => m.y0)), y1: Math.max(...marks.map((m) => m.y1)) };
+const rowMarks = { x0: Math.min(...marks.map((m) => m.x0)), x1: Math.max(...marks.map((m) => m.x1)), y0: Math.min(...marks.map((m) => m.y0)), y1: Math.max(...marks.map((m) => m.y1)) };
 const rowLab = { y0: Math.min(labs[0].y0, labs[1].y0), y1: Math.max(labs[0].y1, labs[1].y1) };
 const rowLogo = { y0: Math.min(...logos2.map((m) => m.y0)), y1: Math.max(...logos2.map((m) => m.y1)) };
-R.gapMK = [rowLab.y0 - rowMarks.y1 - 1]; R.gapKA = [labs[2].y0 - rowLogo.y1 - 1];
-const gLabLogo = rowLogo.y0 - rowLab.y1 - 1, gAgJir = jireh.y0 - labs[2].y1 - 1;
+R.gapMK = [rowLab.y0 - rowMarks.y1 - 1];
+const gLabLogo = rowLogo.y0 - rowLab.y1 - 1;
 await seek(18); const chip18 = await ink(".chip");
 R.gapDM = [rowMarks.y0 - chip18.y1 - 1];
 out.push("");
-divs.forEach((d, i) => ok(Math.abs((d.x0 + d.x1) / 2 - AX) <= 1, `separador ${i + 1} no eixo x=540`, `centro ${((d.x0 + d.x1) / 2).toFixed(1)}`));
-const d1 = divs[0], d2 = divs[1];
-ok(Math.abs(cy(d1) - cy(rowMarks)) <= 2, "separador das marcas centralizado na altura das marcas", `sep ${cy(d1).toFixed(1)} · marcas ${cy(rowMarks).toFixed(1)}`);
-ok(Math.abs(cy(d2) - (rowLab.y0 + rowLogo.y1) / 2) <= 2, "separador da linha 2 centralizado (rótulo → logo)", `sep ${cy(d2).toFixed(1)} · conteúdo ${((rowLab.y0 + rowLogo.y1) / 2).toFixed(1)}`);
-const sym = (a, b) => Math.abs((AX - a) - (b - AX));
-ok(sym(marks[0].x1, marks[1].x0) <= 90, "marcas distribuídas em torno do eixo", `Boechat termina a ${AX - marks[0].x1}px · 6º Leilão começa a ${marks[1].x0 - AX}px do eixo`);
+ok(divs.length === 1, "um único separador no rodapé (entre Leiloeira e Transmissão)", `${divs.length} separador(es)`);
+const d2 = divs[0];
+ok(Math.abs((d2.x0 + d2.x1) / 2 - AX) <= 1, "separador no eixo x=540", `centro ${((d2.x0 + d2.x1) / 2).toFixed(1)}`);
+ok(Math.abs(cy(d2) - (rowLab.y0 + rowLogo.y1) / 2) <= 2, "separador centralizado na altura (rótulo → logo)", `sep ${cy(d2).toFixed(1)} · conteúdo ${((rowLab.y0 + rowLogo.y1) / 2).toFixed(1)}`);
+ok(Math.abs(cx(rowMarks) - AX) <= 3, "par Boechat + 6º Leilão centralizado no eixo", `centro do par ${cx(rowMarks).toFixed(1)}`);
+ok(marks[1].x0 - marks[0].x1 - 1 >= 32 && marks[1].x0 - marks[0].x1 - 1 <= 64, "folga horizontal entre as duas marcas (sem separador)", `${marks[1].x0 - marks[0].x1 - 1}px`);
 ok(Math.abs(cx(labs[0]) - (AX - 158)) <= 3 && Math.abs(cx(labs[1]) - (AX + 158)) <= 3, "rótulos simétricos ao eixo", `${(AX - cx(labs[0])).toFixed(0)} | ${(cx(labs[1]) - AX).toFixed(0)}`);
-ok(Math.abs(cx(jireh) - AX) <= 3 && Math.abs(cx(labs[2]) - AX) <= 3, "agência centralizada no eixo", `${cx(jireh).toFixed(1)} · ${cx(labs[2]).toFixed(1)}`);
-ok(jireh.y1 <= SAFE.y1, "rodapé dentro da zona segura inferior", `termina em y=${jireh.y1} (limite ${SAFE.y1})`);
-ok(rowLogo.y1 - rowLogo.y0 <= 52 && rowMarks.y1 - rowMarks.y0 <= 84 && rowLogo.y1 - rowLogo.y0 < rowMarks.y1 - rowMarks.y0, "créditos menores que as marcas principais", `marcas ${rowMarks.y1 - rowMarks.y0}px · logos ${rowLogo.y1 - rowLogo.y0}px de altura`);
+ok(rowLogo.y1 <= SAFE.y1, "rodapé dentro da zona segura inferior", `termina em y=${rowLogo.y1} (limite ${SAFE.y1})`);
+ok(rowLogo.y1 - rowLogo.y0 <= 52 && rowMarks.y1 - rowMarks.y0 <= 84 && rowLogo.y1 - rowLogo.y0 < 0.7 * (rowMarks.y1 - rowMarks.y0), "créditos bem menores que as marcas principais", `marcas ${rowMarks.y1 - rowMarks.y0}px · créditos ${rowLogo.y1 - rowLogo.y0}px de altura`);
 
 // ritmo dos espaços
 const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN);
 const spread = (a) => (a.length ? Math.max(...a) - Math.min(...a) : 0);
-out.push(`  [detalhe] cabeçalho→vídeo por cena: ${TIMES.map((t,i)=>t+"s:"+R.gapHF[i]).join(" ")}`);
-out.push(`  [detalhe] marcas y ${rowMarks.y0}–${rowMarks.y1} · rótulos ${rowLab.y0}–${rowLab.y1} · logos ${rowLogo.y0}–${rowLogo.y1} · agência ${labs[2].y0}–${labs[2].y1} · Jireh ${jireh.y0}–${jireh.y1} · logos individuais ${logos2.map(b=>b.y0+"–"+b.y1).join(" | ")}`);
-const gHF = avg(R.gapHF), gFC = avg(R.gapFC), gCD = avg(R.gapCD.slice(-3)), gDM = R.gapDM[0], gMK = R.gapMK[0], gKA = R.gapKA[0];
+const gHF = avg(R.gapHF), gFC = avg(R.gapFC), gCD = avg(R.gapCD.slice(-3)), gDM = R.gapDM[0], gMK = R.gapMK[0];
 out.push("");
-out.push(`  Espaços medidos (tinta → tinta, px):  cabeçalho→vídeo ${gHF.toFixed(0)} · vídeo→legenda ${gFC.toFixed(0)} · legenda→dado ${gCD.toFixed(0)} (2 linhas) · dado→marcas ${gDM} · marcas→rótulos ${gMK} · rótulo→logo ${gLabLogo} · logos→agência ${gKA} · agência→Jireh ${gAgJir}`);
-ok(spread(R.gapHF) <= 3 && spread(R.gapFC) <= 3, "espaços estáveis entre cenas (nada pula)", `cabeçalho→vídeo varia ${spread(R.gapHF)}px · vídeo→legenda varia ${spread(R.gapFC)}px`);
+out.push(`  Espaços medidos (px):  cabeçalho→vídeo ${gHF.toFixed(0)} · vídeo→legenda ${gFC.toFixed(0)} · legenda→dado ${gCD.toFixed(0)} (2 linhas) · dado→marcas ${gDM} · marcas→créditos ${gMK} · rótulo→logo ${gLabLogo.toFixed(0)}`);
+ok(spread(R.gapHF) <= 3 && spread(R.gapFC) <= 3, "espaços estáveis entre cenas (nada pula)", `cabeçalho→vídeo varia ${spread(R.gapHF).toFixed(1)}px · vídeo→legenda varia ${spread(R.gapFC)}px`);
 ok(gHF >= 40 && gFC >= 40 && gCD >= 40, "blocos de conteúdo com folga de pelo menos 40 px");
 ok(Math.max(gHF, gFC, gCD) - Math.min(gHF, gFC, gCD) <= 6, "ritmo igual entre os blocos de conteúdo", `${[gHF, gFC, gCD].map((x) => x.toFixed(0)).join(" / ")}`);
 ok(gDM >= 1.6 * Math.max(gHF, gFC, gCD), "espaço antes das marcas bem maior que entre blocos", `${gDM} vs ${Math.max(gHF, gFC, gCD).toFixed(0)}`);
-ok(Math.max(gMK, gKA) <= 0.6 * Math.min(gHF, gFC, gCD) + 1, "espaços dentro do grupo de marcas menores que entre blocos", `${gMK} / ${gKA} vs ${Math.min(gHF, gFC, gCD).toFixed(0)}`);
-ok(Math.abs(gMK - gKA) <= 3, "ritmo interno das marcas uniforme", `${gMK} / ${gKA}`);
+ok(gMK >= 1.2 * Math.max(gHF, gFC, gCD) && gMK <= gDM, "espaço entre as marcas principais e os créditos é generoso (≥ 1,2× o dos blocos)", `${gMK} vs ${Math.max(gHF, gFC, gCD).toFixed(0)}`);
+ok(gLabLogo <= 16, "rótulo colado ao seu logo (mesmo grupo)", `${gLabLogo.toFixed(0)}px`);
 
 // tela final
 await seek(66);

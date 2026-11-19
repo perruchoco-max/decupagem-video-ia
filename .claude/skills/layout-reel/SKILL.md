@@ -24,7 +24,8 @@ A caixa de um texto tem folga invisível (entrelinha). Use `text-box: trim-both 
 
 ## 4. Alinhamento e separadores
 - **Um eixo central (x = 540)** para tudo que é centralizado. Separadores verticais caem **exatamente** em x = 540, centralizados na altura do conteúdo que separam, com o mesmo comprimento relativo.
-- Linhas de marcas **simétricas ao eixo**: colunas de larguras iguais, cada logo centrada na sua coluna (nunca "encostada" no separador).
+- Marcas principais (cliente + evento) formam um **par centralizado no eixo, sem separador** quando têm larguras diferentes (centraliza-se o grupo, não o ponto entre elas). Créditos (leiloeira, transmissão) ficam em **colunas de larguras iguais, simétricas ao eixo**, com UM separador em x = 540 e cada logo centrada na sua coluna.
+- Hierarquia de marcas: cliente e evento maiores (≈ 80 px de altura); créditos bem menores (≈ 46 px). Espaço entre o par principal e os créditos ≥ 1,2× o espaço entre blocos de conteúdo (usamos 64 px); rótulo colado ao seu logo (≈ 10 px). Não acrescente logos/linhas sem o usuário pedir (ex.: "Agência oficial" foi retirada a pedido).
 - Borda esquerda do título = borda esquerda da moldura do vídeo.
 
 ## 5. Títulos e rótulos
