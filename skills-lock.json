@@ -1,6 +1,13 @@
 {
   "version": 2,
   "skills": {
+    "better-typography": {
+      "source": "jakubkrehel/skills",
+      "commit": "672ae44ace6aaed65b86cbb1e2fd6fbea0e79578",
+      "sourceType": "github",
+      "skillPath": "skills/better-typography/SKILL.md",
+      "computedHash": "4a1b00bc0f9c3c7a83f9cb94dfa67359bdd12e160afc3cd69a01c0c1f6d240ff"
+    },
     "find-skills": {
       "source": "vercel-labs/skills",
       "commit": "57217cf86ba38148a57af9e90d14a4c049558330",
@@ -63,6 +70,13 @@
       "sourceType": "github",
       "skillPath": "skills/motion-design/SKILL.md",
       "computedHash": "be5bc38a720ec04b0c78ebf33b30e2bc8fde2d0cb3c5d4f37d383059d341802f"
+    },
+    "refactoring-ui": {
+      "source": "wondelai/skills",
+      "commit": "c5265583b1a9740f06831e1d3e89b35bba3eb430",
+      "sourceType": "github",
+      "skillPath": "refactoring-ui/SKILL.md",
+      "computedHash": "d995183dd20c1685f8eda5bc6a9f537846354589026d64bc3aac80c2e7e8ce6b"
     }
   }
 }
