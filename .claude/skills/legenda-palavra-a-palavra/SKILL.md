@@ -1,6 +1,7 @@
 ---
 name: legenda-palavra-a-palavra
-description: Gera legendas dinâmicas palavra a palavra para vídeos verticais de fala (Reels/TikTok/Shorts, depoimento ou talking head) no estilo "editorial escuro": fonte sans geométrica minúscula, uma palavra por vez no terço inferior do centro, hierarquia de peso (leve, negrito, black gigante) para a palavra de impacto, sem glow e sem caixa. Use sempre que o usuário pedir legenda estilizada, legenda dinâmica, legenda palavra por palavra, legenda "nessa pegada", gerar .ass/.srt com timing por palavra, queimar legenda no vídeo, ou mencionar o vídeo de referência da legenda, mesmo sem citar o estilo.
+description: >-
+  Gera legendas dinâmicas palavra a palavra para vídeos verticais de fala (Reels/TikTok/Shorts, depoimento ou talking head) no estilo editorial escuro: fonte sans geométrica minúscula, uma palavra por vez no terço inferior do centro, hierarquia de peso (leve, negrito, black gigante) para a palavra de impacto, sem glow e sem caixa. Use sempre que o usuário pedir legenda estilizada, legenda dinâmica, legenda palavra por palavra, legenda nessa pegada, gerar .ass/.srt com timing por palavra, queimar legenda no vídeo, ou mencionar o vídeo de referência da legenda, mesmo sem citar o estilo.
 ---
 
 # Legenda palavra a palavra (estilo editorial)
